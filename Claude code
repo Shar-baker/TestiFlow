@@ -1,0 +1,919 @@
+import { useState, useRef } from "react";
+
+// ─── Icons (inline SVG components) ───────────────────────────────────────────
+const Icon = ({ d, size = 16, className = "" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d={d} />
+  </svg>
+);
+
+const icons = {
+  sparkles: "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z",
+  layers: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  layout: "M3 3h18v18H3zM3 9h18M9 21V9",
+  settings: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  star: "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z",
+  plus: "M12 5v14M5 12h14",
+  eye: "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0 M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  message: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  code: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4",
+  check: "M20 6 9 17l-5-5",
+  copy: "M20 9h-9a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2z M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 0 2 2v1",
+  arrowRight: "M5 12h14M12 5l7 7-7 7",
+  zap: "M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z",
+  monitor: "M9 10H4.5A2.5 2.5 0 0 0 2 12.5v0A2.5 2.5 0 0 0 4.5 15H9 M15 10h4.5A2.5 2.5 0 0 1 22 12.5v0A2.5 2.5 0 0 1 19.5 15H15 M12 2v20 M2 7h20 M2 17h20",
+  smartphone: "M12 18h.01 M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z",
+  save: "M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7 M7 3v4a1 1 0 0 0 1 1h7",
+  x: "M18 6 6 18M6 6l12 12",
+  chevronRight: "M9 18l6-6-6-6",
+  external: "M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
+  bell: "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9 M10.3 21a1.94 1.94 0 0 0 3.4 0",
+  upload: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12",
+  video: "M15.6 11.6 22 7v10l-6.4-4.5v-1 M4 5h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z",
+  shield: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+  barChart: "M3 3v18h18 M7 16v-5 M11 16V9 M15 16v-3 M19 16V6",
+  logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9",
+  help: "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01",
+  trending: "m22 7-8.5 8.5-5-5L2 17",
+  palette: "M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z M7 12a5 5 0 0 1 5-5 M12 7v5l3 3",
+  filter: "M22 3H2l8 9.46V19l4 2v-8.54L22 3z",
+};
+
+const MOCK_TESTIMONIALS = [
+  { id: "t1", name: "Sarah Chen", role: "Head of Marketing", company: "Vercel", initials: "SC", message: "TestiFlow transformed how we showcase customer love. Our conversion rate jumped 34% after adding the widget to our landing page. The setup was stupidly easy.", rating: 5, status: "approved", featured: true, date: "2d ago" },
+  { id: "t2", name: "Marcus Williams", role: "Founder", company: "Shipfast", initials: "MW", message: "I've tried every testimonial tool out there. TestiFlow is the only one that doesn't look like it was designed in 2015. My clients are genuinely impressed.", rating: 5, status: "approved", featured: true, date: "4d ago" },
+  { id: "t3", name: "Priya Sharma", role: "Product Designer", company: "Linear", initials: "PS", message: "The widget customization is next level. I matched it perfectly to our brand in under 5 minutes. The carousel layout is chef's kiss.", rating: 5, status: "approved", featured: false, date: "1w ago" },
+  { id: "t4", name: "Tom Erikson", role: "CEO", company: "Framer", initials: "TE", message: "Switched from Senja after 2 years. Better design, better pricing, and the video testimonials feature alone is worth it.", rating: 4, status: "approved", featured: false, date: "1w ago" },
+  { id: "t5", name: "Aisha Okonkwo", role: "Growth Lead", company: "Lemon Squeezy", initials: "AO", message: "Embedded on three different landing pages. The version with the wall of love outperforms every time. Incredible tool.", rating: 5, status: "pending", featured: false, date: "3h ago" },
+  { id: "t6", name: "David Park", role: "SaaS Founder", company: "Taskify", initials: "DP", message: "Video testimonials were the missing piece. Real people, real faces. Nothing builds trust like that.", rating: 5, status: "pending", featured: false, date: "1h ago" },
+];
+
+const MOCK_WALLS = [
+  { id: "w1", name: "Agency Portfolio", slug: "agency-portfolio", status: "published", layout: "grid", color: "#8b5cf6", count: 12, views: 1847 },
+  { id: "w2", name: "SaaS Product", slug: "saas-product", status: "published", layout: "carousel", color: "#6366f1", count: 28, views: 5932 },
+  { id: "w3", name: "Course Reviews", slug: "course-reviews", status: "draft", layout: "masonry", color: "#a855f7", count: 4, views: 0 },
+];
+
+const LAYOUTS = ["grid", "carousel", "masonry", "spotlight", "avatar-wall", "quote-cards"];
+const CARD_STYLES = ["minimal", "bordered", "elevated", "glass"];
+const ACCENT_COLORS = ["#8b5cf6", "#6366f1", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
+
+const avg = (arr, fn) => arr.length ? arr.reduce((a, b) => a + fn(b), 0) / arr.length : 0;
+const fmtNum = n => n >= 1000 ? `${(n/1000).toFixed(1)}k` : n;
+
+// ─── Tiny components ──────────────────────────────────────────────────────────
+function Avatar({ initials, size = 36, color = "#8b5cf6" }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", background: `linear-gradient(135deg, ${color}, ${color}99)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: size * 0.33, flexShrink: 0, fontFamily: "'Syne', sans-serif" }}>
+      {initials}
+    </div>
+  );
+}
+
+function Stars({ rating, size = 12 }) {
+  return (
+    <div style={{ display: "flex", gap: 2 }}>
+      {[1,2,3,4,5].map(i => (
+        <svg key={i} width={size} height={size} viewBox="0 0 24 24" fill={i <= rating ? "#fbbf24" : "none"} stroke={i <= rating ? "#fbbf24" : "#374151"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={icons.star} />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+function Badge({ children, color = "gray" }) {
+  const colors = {
+    gray: { bg: "rgba(100,100,130,0.12)", text: "#9ca3af", border: "rgba(100,100,130,0.2)" },
+    green: { bg: "rgba(34,197,94,0.1)", text: "#4ade80", border: "rgba(34,197,94,0.2)" },
+    amber: { bg: "rgba(245,158,11,0.1)", text: "#fbbf24", border: "rgba(245,158,11,0.2)" },
+    violet: { bg: "rgba(139,92,246,0.1)", text: "#a78bfa", border: "rgba(139,92,246,0.2)" },
+    red: { bg: "rgba(239,68,68,0.1)", text: "#f87171", border: "rgba(239,68,68,0.2)" },
+  };
+  const c = colors[color];
+  return (
+    <span style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}`, borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
+      {children}
+    </span>
+  );
+}
+
+function Btn({ children, variant = "primary", onClick, size = "md", fullWidth = false, style = {} }) {
+  const base = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, fontWeight: 600, cursor: "pointer", border: "none", transition: "all 0.15s", fontFamily: "inherit", flexShrink: 0, width: fullWidth ? "100%" : undefined, ...style };
+  const sizes = { sm: { fontSize: 12, padding: "6px 12px", borderRadius: 10 }, md: { fontSize: 13, padding: "9px 16px", borderRadius: 12 }, lg: { fontSize: 14, padding: "12px 22px", borderRadius: 14 } };
+  const variants = {
+    primary: { background: "linear-gradient(135deg, #8b5cf6, #6366f1)", color: "#fff" },
+    ghost: { background: "rgba(255,255,255,0.05)", color: "#9ca3af", border: "1px solid rgba(255,255,255,0.08)" },
+    outline: { background: "transparent", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.3)" },
+    danger: { background: "rgba(239,68,68,0.1)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" },
+    success: { background: "rgba(34,197,94,0.1)", color: "#4ade80", border: "1px solid rgba(34,197,94,0.2)" },
+  };
+  return <button style={{ ...base, ...sizes[size], ...variants[variant] }} onClick={onClick}>{children}</button>;
+}
+
+function Toggle({ checked, onChange }) {
+  return (
+    <div onClick={() => onChange(!checked)} style={{ width: 40, height: 22, borderRadius: 11, background: checked ? "#8b5cf6" : "rgba(255,255,255,0.1)", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+      <div style={{ position: "absolute", top: 3, left: checked ? 21 : 3, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.3)" }} />
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+export default function TestiFlow() {
+  const [view, setView] = useState("landing"); // landing, dashboard, walls, wallDetail, builder, collect, settings, login
+  const [activeWall, setActiveWall] = useState(MOCK_WALLS[0]);
+  const [testimonials, setTestimonials] = useState(MOCK_TESTIMONIALS);
+  const [builderConfig, setBuilderConfig] = useState({ layout: "grid", accentColor: "#8b5cf6", cardStyle: "elevated", showRatings: true, showAvatars: true, showDates: false, borderRadius: "lg", itemsToShow: 6, autoplay: true, bgColor: "#0a0a0e" });
+  const [builderTab, setBuilderTab] = useState("Layout");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [embedTab, setEmbedTab] = useState("script");
+  const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [settingsTab, setSettingsTab] = useState("Billing");
+  const [previewSize, setPreviewSize] = useState("desktop");
+  const [collectRating, setCollectRating] = useState(0);
+  const [collectHover, setCollectHover] = useState(0);
+  const [collectMsg, setCollectMsg] = useState("");
+  const [collectName, setCollectName] = useState("");
+  const [collectSubmitted, setCollectSubmitted] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const approvedTestimonials = testimonials.filter(t => t.status === "approved");
+  const filteredTestimonials = statusFilter === "all" ? testimonials : testimonials.filter(t => t.status === statusFilter);
+
+  const handleApprove = (id) => setTestimonials(prev => prev.map(t => t.id === id ? { ...t, status: "approved" } : t));
+  const handleReject = (id) => setTestimonials(prev => prev.map(t => t.id === id ? { ...t, status: "rejected" } : t));
+  const updateConfig = (updates) => { setBuilderConfig(prev => ({ ...prev, ...updates })); setSaved(false); };
+  const handleCopy = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 3000); };
+
+  const embedCodes = {
+    script: `<!-- TestiFlow Widget -->\n<div id="testiflow-widget"\n     data-wall="${activeWall.slug}">\n</div>\n<script src="https://testiflow.io/widget.js" async></script>`,
+    react: `import { TestiFlowWidget } from '@testiflow/react'\n\nexport default function App() {\n  return (\n    <TestiFlowWidget\n      wallId="${activeWall.id}"\n      theme="dark"\n    />\n  )\n}`,
+    iframe: `<iframe\n  src="https://testiflow.io/embed/${activeWall.slug}"\n  width="100%"\n  height="600"\n  frameborder="0"\n  loading="lazy"\n></iframe>`,
+  };
+
+  const S = {
+    app: { fontFamily: "'DM Sans', sans-serif", background: "#0a0a0e", color: "#f8f8fc", minHeight: "100vh", display: "flex", flexDirection: "column" },
+    card: { background: "#10101600", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 20 },
+    input: { width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 14px", color: "#f8f8fc", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
+    sectionTitle: { fontSize: 10, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 },
+    label: { fontSize: 12, fontWeight: 600, color: "#9ca3af", marginBottom: 6, display: "block" },
+  };
+
+  // ── LANDING ─────────────────────────────────────────────────────────────────
+  if (view === "landing") return (
+    <div style={{ ...S.app, overflowY: "auto" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 4px } ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 2px }`}</style>
+      {/* Nav */}
+      <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,10,14,0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.05)", padding: "14px 40px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 10, background: "linear-gradient(135deg, #8b5cf6, #6366f1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon d={icons.sparkles} size={14} className="" style={{ color: "#fff" }} />
+          </div>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 17, color: "#fff" }}>TestiFlow</span>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Btn variant="ghost" onClick={() => setView("login")} size="sm">Sign in</Btn>
+          <Btn variant="primary" onClick={() => setView("dashboard")} size="sm">Get started free →</Btn>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <div style={{ position: "relative", padding: "80px 40px 60px", textAlign: "center", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 700, height: 400, background: "rgba(139,92,246,0.08)", borderRadius: "50%", filter: "blur(100px)", pointerEvents: "none" }} />
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)", color: "#a78bfa", fontSize: 12, fontWeight: 600, padding: "5px 14px", borderRadius: 999, marginBottom: 28 }}>
+          <Icon d={icons.sparkles} size={12} /><span>Now with video testimonials</span>
+        </div>
+        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 64, fontWeight: 800, color: "#fff", lineHeight: 1, margin: "0 0 16px", letterSpacing: "-0.03em" }}>
+          Turn customer love<br />
+          <span style={{ background: "linear-gradient(135deg, #a78bfa, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>into conversions</span>
+        </h1>
+        <p style={{ color: "#9ca3af", fontSize: 17, maxWidth: 520, margin: "0 auto 36px", lineHeight: 1.6 }}>
+          Collect testimonials, build stunning widgets, and embed social proof anywhere — in minutes.
+        </p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 60 }}>
+          <Btn variant="primary" onClick={() => setView("dashboard")} size="lg">Start free — no card needed →</Btn>
+          <Btn variant="ghost" size="lg">▶ Watch demo (2 min)</Btn>
+        </div>
+
+        {/* Demo widget */}
+        <div style={{ maxWidth: 800, margin: "0 auto", background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 20, position: "relative" }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+            {["#ef4444","#fbbf24","#4ade80"].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c, opacity: 0.6 }} />)}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            {MOCK_TESTIMONIALS.slice(0, 3).map(t => (
+              <div key={t.id} style={{ background: "#16161f", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 14, textAlign: "left" }}>
+                <Stars rating={t.rating} size={11} />
+                <p style={{ color: "#d1d5db", fontSize: 11, margin: "8px 0 12px", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>"{t.message}"</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Avatar initials={t.initials} size={24} />
+                  <div>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: "#fff", margin: 0 }}>{t.name}</p>
+                    <p style={{ fontSize: 9, color: "#6b7280", margin: 0 }}>{t.role} · {t.company}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Features */}
+      <div style={{ padding: "60px 40px", background: "#0d0d12" }}>
+        <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 36, fontWeight: 800, textAlign: "center", color: "#fff", marginBottom: 40 }}>Everything you need</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, maxWidth: 900, margin: "0 auto" }}>
+          {[
+            { icon: icons.sparkles, title: "Beautiful by default", desc: "Every widget is gorgeous out of the box." },
+            { icon: icons.video, title: "Video testimonials", desc: "Record or upload — nothing builds trust like a real face." },
+            { icon: icons.palette, title: "Full customization", desc: "Colors, fonts, layouts — match your brand perfectly." },
+            { icon: icons.zap, title: "One-click embed", desc: "Works in any website, no matter the tech stack." },
+            { icon: icons.shield, title: "Moderation", desc: "Approve testimonials before they go live." },
+            { icon: icons.barChart, title: "Analytics", desc: "See views and conversion data for every widget." },
+          ].map((f, i) => (
+            <div key={i} style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 20, transition: "border-color 0.2s", cursor: "default" }}>
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                <Icon d={f.icon} size={16} style={{ color: "#a78bfa" }} />
+              </div>
+              <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#fff", margin: "0 0 6px" }}>{f.title}</p>
+              <p style={{ color: "#6b7280", fontSize: 12, margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pricing */}
+      <div style={{ padding: "60px 40px" }}>
+        <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 36, fontWeight: 800, textAlign: "center", color: "#fff", marginBottom: 40 }}>Simple pricing</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, maxWidth: 820, margin: "0 auto" }}>
+          {[
+            { name: "Free", price: 0, features: ["1 wall", "5 testimonials", "Basic widgets", "TestiFlow branding"], highlight: false },
+            { name: "Pro", price: 29, features: ["10 walls", "200 testimonials", "All 6 layouts", "Remove branding", "Video testimonials", "Analytics"], highlight: true },
+            { name: "Agency", price: 99, features: ["Unlimited walls", "Unlimited testimonials", "White-label", "API access", "Team members"], highlight: false },
+          ].map((tier, i) => (
+            <div key={i} style={{ background: tier.highlight ? "linear-gradient(160deg, rgba(139,92,246,0.18), rgba(99,102,241,0.08))" : "#10101a", border: `1px solid ${tier.highlight ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)"}`, borderRadius: 20, padding: 24, position: "relative" }}>
+              {tier.highlight && <div style={{ position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(135deg, #8b5cf6, #6366f1)", color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 12px", borderRadius: 999 }}>Most Popular</div>}
+              <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#fff", fontSize: 16, margin: "0 0 4px" }}>{tier.name}</p>
+              <div style={{ marginBottom: 20 }}>
+                {tier.price === 0 ? <span style={{ fontSize: 28, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif" }}>Free</span> : <><span style={{ fontSize: 28, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif" }}>${tier.price}</span><span style={{ color: "#6b7280", fontSize: 12 }}>/mo</span></>}
+              </div>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+                {tier.features.map(f => <li key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#d1d5db" }}><Icon d={icons.check} size={13} style={{ color: "#a78bfa" }} />{f}</li>)}
+              </ul>
+              <Btn variant={tier.highlight ? "primary" : "ghost"} fullWidth onClick={() => setView("dashboard")} size="sm">{tier.price === 0 ? "Start Free" : "Start Trial"}</Btn>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div style={{ padding: "60px 40px", textAlign: "center" }}>
+        <div style={{ maxWidth: 500, margin: "0 auto", background: "linear-gradient(160deg, rgba(139,92,246,0.15), rgba(99,102,241,0.08))", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 28, padding: 48 }}>
+          <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 800, color: "#fff", margin: "0 0 12px" }}>Ready to convert?</h2>
+          <p style={{ color: "#9ca3af", marginBottom: 24 }}>Join thousands of creators turning customer love into revenue.</p>
+          <Btn variant="primary" onClick={() => setView("dashboard")} size="lg">Start for free →</Btn>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── LOGIN ────────────────────────────────────────────────────────────────────
+  if (view === "login") return (
+    <div style={{ ...S.app, alignItems: "center", justifyContent: "center" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');`}</style>
+      <div style={{ width: "100%", maxWidth: 380, padding: "0 20px" }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 14, background: "linear-gradient(135deg, #8b5cf6, #6366f1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}><Icon d={icons.sparkles} size={18} /></div>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, color: "#fff" }}>TestiFlow</span>
+        </div>
+        <div style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 22, padding: 28 }}>
+          <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, color: "#fff", margin: "0 0 4px" }}>Welcome back</h1>
+          <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 22 }}>Sign in to your account</p>
+          {[{ label: "Email", type: "email", placeholder: "you@example.com" }, { label: "Password", type: "password", placeholder: "••••••••" }].map(f => (
+            <div key={f.label} style={{ marginBottom: 14 }}>
+              <label style={S.label}>{f.label}</label>
+              <input style={S.input} type={f.type} placeholder={f.placeholder} />
+            </div>
+          ))}
+          <Btn variant="primary" fullWidth onClick={() => setView("dashboard")} style={{ marginTop: 8 }}>Sign in →</Btn>
+          <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "#6b7280" }}>
+            No account? <span style={{ color: "#a78bfa", cursor: "pointer" }} onClick={() => setView("dashboard")}>Sign up free</span>
+          </div>
+        </div>
+        <div style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "#6b7280", cursor: "pointer" }} onClick={() => setView("landing")}>← Back to landing</div>
+      </div>
+    </div>
+  );
+
+  // ── COLLECT FORM ─────────────────────────────────────────────────────────────
+  if (view === "collect") return (
+    <div style={{ ...S.app, alignItems: "center", justifyContent: "flex-start", padding: "48px 20px", overflowY: "auto", background: `radial-gradient(ellipse at top, ${activeWall.color}10 0%, #0a0a0e 60%)` }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');`}</style>
+      <div style={{ width: "100%", maxWidth: 460 }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 18, background: `linear-gradient(135deg, ${activeWall.color}, ${activeWall.color}80)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", boxShadow: `0 8px 24px ${activeWall.color}40` }}><Icon d={icons.sparkles} size={22} /></div>
+          <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>{activeWall.name}</h2>
+          <p style={{ color: "#9ca3af", fontSize: 13 }}>Share your honest experience</p>
+        </div>
+        {collectSubmitted ? (
+          <div style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 22, padding: 48, textAlign: "center" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: `${activeWall.color}20`, border: `2px solid ${activeWall.color}50`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <Icon d={icons.check} size={24} style={{ color: activeWall.color }} />
+            </div>
+            <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 8 }}>Thank you! 🎉</h3>
+            <p style={{ color: "#9ca3af", fontSize: 13, marginBottom: 20 }}>Your testimonial has been submitted and will appear once approved.</p>
+            <Btn variant="ghost" size="sm" onClick={() => { setCollectSubmitted(false); setCollectRating(0); setCollectMsg(""); setCollectName(""); setView("dashboard"); }}>Back to dashboard</Btn>
+          </div>
+        ) : (
+          <div style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 22, padding: 24 }}>
+            <label style={S.label}>Your rating</label>
+            <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+              {[1,2,3,4,5].map(s => (
+                <svg key={s} width={28} height={28} viewBox="0 0 24 24" fill={s <= (collectHover || collectRating) ? "#fbbf24" : "none"} stroke={s <= (collectHover || collectRating) ? "#fbbf24" : "#374151"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: "pointer", transition: "transform 0.1s" }} onMouseEnter={() => setCollectHover(s)} onMouseLeave={() => setCollectHover(0)} onClick={() => setCollectRating(s)}>
+                  <path d={icons.star} />
+                </svg>
+              ))}
+            </div>
+            <label style={S.label}>Your testimonial *</label>
+            <textarea value={collectMsg} onChange={e => setCollectMsg(e.target.value)} placeholder="Share your experience. What results did you get?" rows={4} style={{ ...S.input, resize: "none", marginBottom: 14 }} />
+            <label style={S.label}>Your name *</label>
+            <input value={collectName} onChange={e => setCollectName(e.target.value)} placeholder="Sarah Chen" style={{ ...S.input, marginBottom: 20 }} />
+            <button onClick={() => { if (collectRating && collectMsg.length > 10 && collectName) setCollectSubmitted(true); }} style={{ width: "100%", padding: "13px", borderRadius: 14, background: `linear-gradient(135deg, ${activeWall.color}, ${activeWall.color}cc)`, color: "#fff", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer", boxShadow: `0 6px 20px ${activeWall.color}40`, fontFamily: "inherit" }}>
+              Submit testimonial →
+            </button>
+          </div>
+        )}
+        <div style={{ textAlign: "center", marginTop: 14, fontSize: 11, color: "#4b5563" }}>
+          Powered by <span style={{ color: activeWall.color, cursor: "pointer" }} onClick={() => setView("landing")}>TestiFlow</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── DASHBOARD LAYOUT ─────────────────────────────────────────────────────────
+  const SidebarNav = () => (
+    <div style={{ width: sidebarCollapsed ? 64 : 220, flexShrink: 0, background: "#0d0d12", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0, transition: "width 0.25s" }}>
+      {/* Logo */}
+      <div style={{ padding: sidebarCollapsed ? "18px 0" : "16px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 8, justifyContent: sidebarCollapsed ? "center" : "flex-start" }}>
+        <div onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ width: 30, height: 30, borderRadius: 10, background: "linear-gradient(135deg, #8b5cf6, #6366f1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+          <Icon d={icons.sparkles} size={14} />
+        </div>
+        {!sidebarCollapsed && <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16, color: "#fff" }}>TestiFlow</span>}
+      </div>
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+        {[
+          { label: "Overview", v: "dashboard", icon: icons.layout },
+          { label: "Walls", v: "walls", icon: icons.layers },
+          { label: "Settings", v: "settings", icon: icons.settings },
+        ].map(item => {
+          const active = view === item.v || (item.v === "walls" && (view === "wallDetail" || view === "builder"));
+          return (
+            <div key={item.v} onClick={() => setView(item.v)} style={{ display: "flex", alignItems: "center", gap: 10, padding: sidebarCollapsed ? "10px 0" : "9px 12px", borderRadius: 12, cursor: "pointer", background: active ? "rgba(139,92,246,0.12)" : "transparent", color: active ? "#a78bfa" : "#6b7280", border: `1px solid ${active ? "rgba(139,92,246,0.2)" : "transparent"}`, justifyContent: sidebarCollapsed ? "center" : "flex-start", transition: "all 0.15s" }}>
+              <Icon d={item.icon} size={16} />
+              {!sidebarCollapsed && <span style={{ fontSize: 13, fontWeight: 500 }}>{item.label}</span>}
+              {!sidebarCollapsed && active && <Icon d={icons.chevronRight} size={12} style={{ marginLeft: "auto", opacity: 0.5 }} />}
+            </div>
+          );
+        })}
+      </nav>
+      {/* Upgrade CTA */}
+      {!sidebarCollapsed && (
+        <div style={{ margin: "0 8px 8px", background: "linear-gradient(160deg, rgba(139,92,246,0.15), rgba(99,102,241,0.08))", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 14, padding: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+            <Icon d={icons.zap} size={14} style={{ color: "#a78bfa" }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "'Syne', sans-serif" }}>Free Plan</span>
+          </div>
+          <p style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.4, marginBottom: 10 }}>3/5 testimonials used. Upgrade for unlimited.</p>
+          <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 999, height: 4, marginBottom: 10 }}>
+            <div style={{ background: "linear-gradient(90deg, #8b5cf6, #6366f1)", width: "60%", height: "100%", borderRadius: 999 }} />
+          </div>
+          <Btn variant="primary" fullWidth size="sm" onClick={() => setView("settings")}>Upgrade to Pro</Btn>
+        </div>
+      )}
+      {/* Bottom nav */}
+      <div style={{ padding: "8px 8px 12px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 2 }}>
+        {[{ label: "Landing page", v: "landing", icon: icons.external }, { label: "Sign out", v: "login", icon: icons.logout }].map(item => (
+          <div key={item.v} onClick={() => setView(item.v)} style={{ display: "flex", alignItems: "center", gap: 10, padding: sidebarCollapsed ? "8px 0" : "8px 12px", borderRadius: 10, cursor: "pointer", color: "#6b7280", justifyContent: sidebarCollapsed ? "center" : "flex-start" }}>
+            <Icon d={item.icon} size={15} />
+            {!sidebarCollapsed && <span style={{ fontSize: 12 }}>{item.label}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const DashHeader = ({ title, subtitle, actions }) => (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(10,10,14,0.8)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 30 }}>
+      <div>
+        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 800, color: "#fff", margin: 0 }}>{title}</h1>
+        {subtitle && <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 0" }}>{subtitle}</p>}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {actions}
+        <div style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg, #8b5cf6, #6366f1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", cursor: "pointer" }}>JD</div>
+      </div>
+    </div>
+  );
+
+  // ── BUILDER ──────────────────────────────────────────────────────────────────
+  if (view === "builder") {
+    const previewTestimonials = approvedTestimonials.slice(0, builderConfig.itemsToShow);
+    const PreviewCard = ({ t }) => {
+      const radii = { none: 0, sm: 8, md: 12, lg: 16, xl: 20 };
+      const r = radii[builderConfig.borderRadius] || 12;
+      const cardBg = { minimal: "transparent", bordered: "transparent", elevated: "rgba(255,255,255,0.04)", glass: "rgba(255,255,255,0.06)" };
+      const cardBorder = { minimal: "none", bordered: `1px solid ${builderConfig.accentColor}30`, elevated: "none", glass: "1px solid rgba(255,255,255,0.1)" };
+      return (
+        <div style={{ padding: 12, borderRadius: r, background: cardBg[builderConfig.cardStyle], border: cardBorder[builderConfig.cardStyle] }}>
+          {builderConfig.showRatings && <Stars rating={t.rating} size={10} />}
+          <p style={{ fontSize: 11, color: "#d1d5db", margin: "8px 0 10px", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>"{t.message}"</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            {builderConfig.showAvatars && <Avatar initials={t.initials} size={22} color={builderConfig.accentColor} />}
+            <div><p style={{ fontSize: 10, fontWeight: 700, color: "#fff", margin: 0 }}>{t.name}</p><p style={{ fontSize: 9, color: "#6b7280", margin: 0 }}>{t.role}</p></div>
+          </div>
+        </div>
+      );
+    };
+
+    const WidgetPreview = () => {
+      const ts = previewTestimonials;
+      if (!ts.length) return <p style={{ color: "#6b7280", textAlign: "center", padding: 40, fontSize: 13 }}>No approved testimonials</p>;
+      if (builderConfig.layout === "grid") return <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>{ts.map(t => <PreviewCard key={t.id} t={t} />)}</div>;
+      if (builderConfig.layout === "masonry") return <div style={{ columns: 2, gap: 8 }}>{ts.map(t => <div key={t.id} style={{ breakInside: "avoid", marginBottom: 8 }}><PreviewCard t={t} /></div>)}</div>;
+      if (builderConfig.layout === "carousel") return (
+        <div>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>{ts.map(t => <div key={t.id} style={{ flexShrink: 0, width: 220 }}><PreviewCard t={t} /></div>)}</div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 8 }}>{ts.map((_, i) => <div key={i} style={{ width: i === 0 ? 14 : 5, height: 5, borderRadius: 999, background: i === 0 ? builderConfig.accentColor : "rgba(255,255,255,0.15)", transition: "width 0.2s" }} />)}</div>
+        </div>
+      );
+      if (builderConfig.layout === "spotlight") {
+        const t = ts[0];
+        return (
+          <div style={{ textAlign: "center", padding: "16px 12px" }}>
+            <Avatar initials={t.initials} size={48} color={builderConfig.accentColor} />
+            <div style={{ display: "flex", justifyContent: "center", margin: "10px 0" }}><Stars rating={t.rating} size={12} /></div>
+            <p style={{ fontSize: 13, color: "#e5e7eb", lineHeight: 1.6, fontStyle: "italic", marginBottom: 12 }}>"{t.message}"</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: "#fff" }}>{t.name}</p>
+            <p style={{ fontSize: 10, color: "#6b7280" }}>{t.role}</p>
+          </div>
+        );
+      }
+      if (builderConfig.layout === "avatar-wall") return (
+        <div style={{ padding: 12 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 12 }}>
+            {ts.map(t => <div key={t.id} style={{ width: 34, height: 34, borderRadius: "50%", background: `linear-gradient(135deg, ${builderConfig.accentColor}, ${builderConfig.accentColor}80)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff", border: "2px solid #0a0a0e" }}>{t.initials}</div>)}
+          </div>
+          <p style={{ fontSize: 12, color: "#9ca3af" }}><span style={{ fontWeight: 700, color: "#fff" }}>{ts.length} people</span> love this product</p>
+          <div style={{ display: "flex", gap: 2, marginTop: 4 }}>{[1,2,3,4,5].map(i => <svg key={i} width={10} height={10} viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" strokeWidth="2"><path d={icons.star}/></svg>)}</div>
+        </div>
+      );
+      if (builderConfig.layout === "quote-cards") {
+        const t = ts[0];
+        return (
+          <div style={{ padding: 16 }}>
+            <p style={{ fontFamily: "'Syne', sans-serif", fontSize: 18, fontWeight: 800, color: builderConfig.accentColor, lineHeight: 1.3, marginBottom: 14 }}>"{t.message.slice(0, 80)}{t.message.length > 80 ? "..." : ""}"</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Avatar initials={t.initials} size={30} color={builderConfig.accentColor} />
+              <div><p style={{ fontSize: 11, fontWeight: 700, color: "#fff", margin: 0 }}>{t.name}</p><p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>{t.role}</p></div>
+            </div>
+          </div>
+        );
+      }
+      return null;
+    };
+
+    return (
+      <div style={{ display: "flex", height: "100vh", background: "#0a0a0e", fontFamily: "'DM Sans', sans-serif", overflow: "hidden" }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap'); * { box-sizing: border-box }`}</style>
+        {/* Top bar */}
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", background: "rgba(10,10,14,0.95)", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(20px)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span onClick={() => setView("wallDetail")} style={{ color: "#6b7280", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>←</span>
+            <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 16 }}>|</span>
+            <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 13, fontWeight: 700, color: "#fff" }}>Widget Builder</span>
+            <span style={{ color: "#6b7280", fontSize: 12 }}>· {activeWall.name}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {/* Preview size */}
+            <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: 3, gap: 2 }}>
+              {[{ id: "desktop", icon: icons.monitor }, { id: "mobile", icon: icons.smartphone }].map(s => (
+                <div key={s.id} onClick={() => setPreviewSize(s.id)} style={{ width: 30, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: previewSize === s.id ? "rgba(255,255,255,0.1)" : "transparent", color: previewSize === s.id ? "#fff" : "#6b7280" }}>
+                  <Icon d={s.icon} size={14} />
+                </div>
+              ))}
+            </div>
+            <Btn variant="ghost" size="sm" onClick={() => setEmbedOpen(true)}><Icon d={icons.code} size={13} /> Embed</Btn>
+            <Btn variant={saved ? "success" : "primary"} size="sm" onClick={handleSave}>
+              {saved ? <><Icon d={icons.check} size={13} /> Saved</> : <><Icon d={icons.save} size={13} /> Save</>}
+            </Btn>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ display: "flex", flex: 1, marginTop: 52, overflow: "hidden" }}>
+          {/* Left panel */}
+          <div style={{ width: 280, flexShrink: 0, background: "#0d0d12", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+            <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              {["Layout", "General", "Content", "Advanced"].map(tab => (
+                <div key={tab} onClick={() => setBuilderTab(tab)} style={{ flex: 1, textAlign: "center", padding: "11px 0", fontSize: 11, fontWeight: 600, cursor: "pointer", color: builderTab === tab ? "#a78bfa" : "#6b7280", borderBottom: `2px solid ${builderTab === tab ? "#8b5cf6" : "transparent"}`, transition: "all 0.15s" }}>{tab}</div>
+              ))}
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+              {builderTab === "Layout" && (
+                <div>
+                  <p style={S.sectionTitle}>Layout Style</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 20 }}>
+                    {LAYOUTS.map(l => (
+                      <div key={l} onClick={() => updateConfig({ layout: l })} style={{ padding: "9px 10px", borderRadius: 10, border: `1px solid ${builderConfig.layout === l ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)"}`, background: builderConfig.layout === l ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.02)", cursor: "pointer", fontSize: 11, fontWeight: 600, color: builderConfig.layout === l ? "#a78bfa" : "#9ca3af", textAlign: "center", textTransform: "capitalize" }}>
+                        {l.replace("-", " ")}
+                      </div>
+                    ))}
+                  </div>
+                  <p style={S.sectionTitle}>Card Style</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 20 }}>
+                    {CARD_STYLES.map(s => (
+                      <div key={s} onClick={() => updateConfig({ cardStyle: s })} style={{ padding: "8px", borderRadius: 10, border: `1px solid ${builderConfig.cardStyle === s ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)"}`, background: builderConfig.cardStyle === s ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.02)", cursor: "pointer", fontSize: 11, fontWeight: 600, color: builderConfig.cardStyle === s ? "#a78bfa" : "#9ca3af", textAlign: "center", textTransform: "capitalize" }}>{s}</div>
+                    ))}
+                  </div>
+                  <p style={S.sectionTitle}>Accent Color</p>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+                    {ACCENT_COLORS.map(c => (
+                      <div key={c} onClick={() => updateConfig({ accentColor: c })} style={{ width: 26, height: 26, borderRadius: "50%", background: c, cursor: "pointer", border: `2px solid ${builderConfig.accentColor === c ? "#fff" : "transparent"}`, transform: builderConfig.accentColor === c ? "scale(1.15)" : "scale(1)", transition: "all 0.15s" }} />
+                    ))}
+                  </div>
+                  <p style={S.sectionTitle}>Display Options</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {[{ key: "showRatings", label: "Show star ratings" }, { key: "showAvatars", label: "Show avatars" }, { key: "showDates", label: "Show dates" }].map(opt => (
+                      <div key={opt.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 12, color: "#d1d5db" }}>{opt.label}</span>
+                        <Toggle checked={builderConfig[opt.key]} onChange={v => updateConfig({ [opt.key]: v })} />
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ ...S.sectionTitle, marginTop: 20 }}>Items to Show</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <input type="range" min={1} max={12} value={builderConfig.itemsToShow} onChange={e => updateConfig({ itemsToShow: +e.target.value })} style={{ flex: 1, accentColor: "#8b5cf6" }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", minWidth: 20, textAlign: "right" }}>{builderConfig.itemsToShow}</span>
+                  </div>
+                </div>
+              )}
+              {builderTab === "General" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div><label style={S.label}>Wall Name</label><input defaultValue={activeWall.name} style={S.input} /></div>
+                  <div><label style={S.label}>Background Color</label><div style={{ display: "flex", gap: 8 }}><input type="color" value={builderConfig.bgColor} onChange={e => updateConfig({ bgColor: e.target.value })} style={{ width: 40, height: 40, borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", cursor: "pointer" }} /><input value={builderConfig.bgColor} onChange={e => updateConfig({ bgColor: e.target.value })} style={{ ...S.input, fontFamily: "monospace" }} /></div></div>
+                </div>
+              )}
+              {builderTab === "Content" && (
+                <div>
+                  <p style={S.sectionTitle}>Approved ({approvedTestimonials.length})</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {approvedTestimonials.map(t => (
+                      <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "8px 10px" }}>
+                        <input type="checkbox" defaultChecked style={{ accentColor: "#8b5cf6" }} />
+                        <Avatar initials={t.initials} size={22} color={builderConfig.accentColor} />
+                        <div style={{ minWidth: 0 }}><p style={{ fontSize: 11, fontWeight: 600, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</p><p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>{t.company}</p></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {builderTab === "Advanced" && (
+                <div><label style={S.label}>Custom CSS</label><textarea placeholder={`.testiflow-widget {\n  /* your styles */\n}`} rows={12} style={{ ...S.input, resize: "none", fontFamily: "monospace", fontSize: 11 }} /></div>
+              )}
+            </div>
+          </div>
+
+          {/* Preview panel */}
+          <div style={{ flex: 1, overflow: "auto", background: "#0a0a0e", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "10px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 8 }}>
+              <Icon d={icons.eye} size={14} style={{ color: "#6b7280" }} />
+              <span style={{ fontSize: 12, color: "#6b7280" }}>Live Preview</span>
+              <div style={{ marginLeft: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", animation: "pulse 2s infinite" }} />
+                <span style={{ fontSize: 10, color: "#6b7280" }}>Auto-updating</span>
+              </div>
+            </div>
+            <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 32 }}>
+              <div style={{ width: previewSize === "mobile" ? 320 : "100%", maxWidth: 680, background: builderConfig.bgColor, borderRadius: 20, border: "1px solid rgba(255,255,255,0.1)", overflow: "hidden", transition: "width 0.3s" }}>
+                <div style={{ padding: 16 }}><WidgetPreview /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Embed dialog */}
+        {embedOpen && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }} onClick={() => setEmbedOpen(false)} />
+            <div style={{ position: "relative", background: "#10101a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 22, width: "100%", maxWidth: 520, zIndex: 10, overflow: "hidden" }}>
+              <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div><h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 800, color: "#fff", margin: 0 }}>Embed your widget</h3><p style={{ fontSize: 11, color: "#6b7280", margin: "3px 0 0" }}>Copy and paste into your website</p></div>
+                <div onClick={() => setEmbedOpen(false)} style={{ cursor: "pointer", color: "#6b7280", padding: 4 }}><Icon d={icons.x} size={16} /></div>
+              </div>
+              <div style={{ display: "flex", gap: 4, padding: "14px 16px 0" }}>
+                {[{ id: "script", label: "HTML" }, { id: "react", label: "React" }, { id: "iframe", label: "iFrame" }].map(t => (
+                  <div key={t.id} onClick={() => setEmbedTab(t.id)} style={{ padding: "6px 14px", borderRadius: 10, cursor: "pointer", fontSize: 12, fontWeight: 600, background: embedTab === t.id ? "rgba(139,92,246,0.15)" : "transparent", color: embedTab === t.id ? "#a78bfa" : "#6b7280", border: `1px solid ${embedTab === t.id ? "rgba(139,92,246,0.3)" : "transparent"}` }}>{t.label}</div>
+                ))}
+              </div>
+              <div style={{ margin: 16, position: "relative" }}>
+                <pre style={{ background: "#0a0a0e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 16, fontSize: 11, color: "#9ca3af", fontFamily: "monospace", lineHeight: 1.6, overflow: "auto", margin: 0, whiteSpace: "pre-wrap" }}>{embedCodes[embedTab]}</pre>
+                <button onClick={handleCopy} style={{ position: "absolute", top: 10, right: 10, display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: copied ? "#4ade80" : "#9ca3af", fontSize: 11, fontWeight: 600, padding: "5px 10px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit" }}>
+                  <Icon d={copied ? icons.check : icons.copy} size={11} />{copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── SHARED DASHBOARD WRAPPER ─────────────────────────────────────────────────
+  return (
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif", background: "#0a0a0e" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap'); * { box-sizing: border-box } ::-webkit-scrollbar { width: 4px } ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 2px }`}</style>
+      <SidebarNav />
+      <main style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+
+        {/* ── DASHBOARD OVERVIEW ─────────────────────────────────────────────── */}
+        {view === "dashboard" && (
+          <>
+            <DashHeader title="Overview" subtitle="Good morning — here's what's happening" actions={<Btn variant="primary" size="sm" onClick={() => setView("walls")}><Icon d={icons.plus} size={13} /> New Wall</Btn>} />
+            <div style={{ padding: 24, flex: 1 }}>
+              {/* Upgrade banner */}
+              <div style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(99,102,241,0.08))", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 18, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 12, background: "rgba(139,92,246,0.2)", border: "1px solid rgba(139,92,246,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon d={icons.zap} size={16} style={{ color: "#a78bfa" }} /></div>
+                  <div><p style={{ fontSize: 13, fontWeight: 600, color: "#fff", margin: 0 }}>You're on the Free plan</p><p style={{ fontSize: 11, color: "#9ca3af", margin: "2px 0 0" }}>3/5 testimonials · 1/1 walls</p></div>
+                </div>
+                <Btn variant="primary" size="sm" onClick={() => setView("settings")}>Upgrade to Pro →</Btn>
+              </div>
+              {/* Stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 28 }}>
+                {[
+                  { label: "Total Walls", val: 3, icon: icons.layers, color: "#8b5cf6", bg: "rgba(139,92,246,0.1)", border: "rgba(139,92,246,0.2)", trend: "+1 this month" },
+                  { label: "Testimonials", val: testimonials.length, icon: icons.message, color: "#6366f1", bg: "rgba(99,102,241,0.1)", border: "rgba(99,102,241,0.2)", trend: "+2 this week" },
+                  { label: "Widget Views", val: fmtNum(7779), icon: icons.eye, color: "#3b82f6", bg: "rgba(59,130,246,0.1)", border: "rgba(59,130,246,0.2)", trend: "+1.2k this week" },
+                  { label: "Pending", val: testimonials.filter(t => t.status === "pending").length, icon: icons.bell, color: "#f59e0b", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.2)", trend: "Needs review" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 18, padding: 18 }}>
+                    <Icon d={s.icon} size={16} style={{ color: s.color, marginBottom: 10 }} />
+                    <p style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 800, color: "#fff", margin: "0 0 2px" }}>{s.val}</p>
+                    <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 2px" }}>{s.label}</p>
+                    <p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>{s.trend}</p>
+                  </div>
+                ))}
+              </div>
+              {/* 2-col */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 20 }}>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 800, color: "#fff", margin: 0 }}>Recent submissions</h2>
+                    <span style={{ fontSize: 11, color: "#a78bfa", cursor: "pointer" }} onClick={() => setView("wallDetail")}>View all →</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {testimonials.slice(0, 4).map(t => (
+                      <div key={t.id} style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "14px 16px", display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <Avatar initials={t.initials} size={36} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{t.name}</span>
+                              <Badge color={t.status === "approved" ? "green" : t.status === "pending" ? "amber" : "red"}>{t.status}</Badge>
+                            </div>
+                            <span style={{ fontSize: 10, color: "#6b7280" }}>{t.date}</span>
+                          </div>
+                          <Stars rating={t.rating} size={11} />
+                          <p style={{ fontSize: 11, color: "#9ca3af", margin: "6px 0 0", lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.message}</p>
+                          {t.status === "pending" && (
+                            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                              <Btn variant="danger" size="sm" onClick={() => handleReject(t.id)}><Icon d={icons.x} size={11} /> Reject</Btn>
+                              <Btn variant="success" size="sm" onClick={() => handleApprove(t.id)}><Icon d={icons.check} size={11} /> Approve</Btn>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 800, color: "#fff", margin: 0 }}>Your walls</h2>
+                    <span style={{ fontSize: 11, color: "#a78bfa", cursor: "pointer" }} onClick={() => setView("walls")}>Manage →</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {MOCK_WALLS.map(wall => (
+                      <div key={wall.id} onClick={() => { setActiveWall(wall); setView("wallDetail"); }} style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "12px 14px", cursor: "pointer", transition: "border-color 0.15s" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{wall.name}</span>
+                          <Badge color={wall.status === "published" ? "green" : "gray"}>{wall.status}</Badge>
+                        </div>
+                        <div style={{ display: "flex", gap: 12, fontSize: 11, color: "#6b7280" }}>
+                          <span>💬 {wall.count}</span><span>👁 {fmtNum(wall.views)}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div onClick={() => setView("walls")} style={{ border: "2px dashed rgba(255,255,255,0.08)", borderRadius: 14, padding: "12px 14px", cursor: "pointer", textAlign: "center", fontSize: 12, color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      <Icon d={icons.plus} size={13} /> New wall (Pro)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── WALLS LIST ──────────────────────────────────────────────────────── */}
+        {view === "walls" && (
+          <>
+            <DashHeader title="Testimonial Walls" subtitle={`${MOCK_WALLS.length} walls · Free plan (1/1 used)`} actions={<Btn variant="primary" size="sm"><Icon d={icons.plus} size={13} /> New Wall</Btn>} />
+            <div style={{ padding: 24 }}>
+              <div style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 14, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 10 }}>
+                <p style={{ fontSize: 12, color: "#fbbf24", margin: 0 }}>Free plan: 1 wall limit reached. <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => setView("settings")}>Upgrade to Pro</span> for 10 walls.</p>
+                <Btn variant="primary" size="sm" onClick={() => setView("settings")}>Upgrade</Btn>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+                {MOCK_WALLS.map(wall => (
+                  <div key={wall.id} style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                        <div style={{ width: 38, height: 38, borderRadius: 12, background: `${wall.color}20`, border: `1px solid ${wall.color}40`, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon d={icons.layers} size={16} style={{ color: wall.color }} /></div>
+                        <div><p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: 0 }}>{wall.name}</p><p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>/{wall.slug}</p></div>
+                      </div>
+                      <Badge color={wall.status === "published" ? "green" : "gray"}>{wall.status}</Badge>
+                    </div>
+                    <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
+                      <span style={{ color: "#d1d5db" }}>💬 <strong>{wall.count}</strong></span>
+                      <span style={{ color: "#d1d5db" }}>👁 <strong>{fmtNum(wall.views)}</strong></span>
+                      <span style={{ color: "#6b7280", marginLeft: "auto", textTransform: "capitalize" }}>{wall.layout}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 6, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <Btn variant="ghost" size="sm" style={{ flex: 1 }} onClick={() => { setActiveWall(wall); setView("wallDetail"); }}>Manage</Btn>
+                      <Btn variant="ghost" size="sm" style={{ flex: 1 }} onClick={() => { setActiveWall(wall); setView("builder"); }}>Builder</Btn>
+                      <Btn variant="outline" size="sm" style={{ flex: 1 }} onClick={() => { setActiveWall(wall); setEmbedOpen(true); setView("builder"); }}><Icon d={icons.code} size={12} /> Embed</Btn>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <Btn variant="ghost" size="sm" style={{ flex: 1, fontSize: 11 }} onClick={() => { setActiveWall(wall); setView("collect"); }}>
+                        <Icon d={icons.external} size={11} /> Collection Form
+                      </Btn>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ border: "2px dashed rgba(255,255,255,0.07)", borderRadius: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 200, cursor: "pointer", transition: "border-color 0.15s" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon d={icons.plus} size={20} style={{ color: "#6b7280" }} /></div>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: "#6b7280", margin: 0 }}>Create new wall</p>
+                  <p style={{ fontSize: 11, color: "#4b5563", margin: 0 }}>Requires Pro plan</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── WALL DETAIL ─────────────────────────────────────────────────────── */}
+        {view === "wallDetail" && (
+          <>
+            <DashHeader
+              title={activeWall.name}
+              subtitle={`${activeWall.count} testimonials · ${fmtNum(activeWall.views)} views`}
+              actions={
+                <div style={{ display: "flex", gap: 8 }}>
+                  <Btn variant="ghost" size="sm" onClick={() => setView("collect")}><Icon d={icons.external} size={12} /> Collection Form</Btn>
+                  <Btn variant="primary" size="sm" onClick={() => setView("builder")}><Icon d={icons.layout} size={12} /> Widget Builder</Btn>
+                </div>
+              }
+            />
+            <div style={{ padding: 24 }}>
+              <div style={{ fontSize: 12, color: "#6b7280", cursor: "pointer", marginBottom: 20, display: "flex", alignItems: "center", gap: 6 }} onClick={() => setView("walls")}>← All walls</div>
+              {/* Mini stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+                {[
+                  { label: "Total", val: testimonials.length, c: "#8b5cf6" },
+                  { label: "Approved", val: testimonials.filter(t => t.status === "approved").length, c: "#4ade80" },
+                  { label: "Avg Rating", val: avg(testimonials.filter(t => t.status === "approved"), t => t.rating).toFixed(1), c: "#fbbf24" },
+                  { label: "Views", val: fmtNum(activeWall.views), c: "#60a5fa" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "14px 16px", display: "flex", gap: 12, alignItems: "center" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: `${s.c}15`, border: `1px solid ${s.c}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: 16, fontFamily: "'Syne', sans-serif", fontWeight: 800, color: s.c }}>{s.val}</span>
+                    </div>
+                    <span style={{ fontSize: 11, color: "#9ca3af" }}>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Filter */}
+              <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+                {["all", "approved", "pending", "rejected"].map(f => (
+                  <div key={f} onClick={() => setStatusFilter(f)} style={{ padding: "6px 14px", borderRadius: 10, cursor: "pointer", fontSize: 11, fontWeight: 600, background: statusFilter === f ? "rgba(139,92,246,0.12)" : "transparent", color: statusFilter === f ? "#a78bfa" : "#6b7280", border: `1px solid ${statusFilter === f ? "rgba(139,92,246,0.3)" : "transparent"}`, textTransform: "capitalize" }}>
+                    {f} <span style={{ background: "rgba(255,255,255,0.08)", borderRadius: 6, padding: "1px 5px", marginLeft: 4 }}>{f === "all" ? testimonials.length : testimonials.filter(t => t.status === f).length}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+                {filteredTestimonials.map(t => (
+                  <div key={t.id} style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                        <Avatar initials={t.initials} size={36} />
+                        <div><p style={{ fontSize: 12, fontWeight: 600, color: "#fff", margin: 0 }}>{t.name}</p><p style={{ fontSize: 10, color: "#6b7280", margin: 0 }}>{t.role} · {t.company}</p></div>
+                      </div>
+                      <Badge color={t.status === "approved" ? "green" : t.status === "pending" ? "amber" : "red"}>{t.status}</Badge>
+                    </div>
+                    <Stars rating={t.rating} size={11} />
+                    <p style={{ fontSize: 11, color: "#9ca3af", margin: "8px 0 0", lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>"{t.message}"</p>
+                    {t.status === "pending" && (
+                      <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+                        <Btn variant="danger" size="sm" style={{ flex: 1 }} onClick={() => handleReject(t.id)}><Icon d={icons.x} size={11} /> Reject</Btn>
+                        <Btn variant="success" size="sm" style={{ flex: 1 }} onClick={() => handleApprove(t.id)}><Icon d={icons.check} size={11} /> Approve</Btn>
+                      </div>
+                    )}
+                    <div style={{ marginTop: 10, fontSize: 10, color: "#4b5563" }}>{t.date}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── SETTINGS ────────────────────────────────────────────────────────── */}
+        {view === "settings" && (
+          <>
+            <DashHeader title="Settings" subtitle="Manage your account and subscription" />
+            <div style={{ padding: 24 }}>
+              <div style={{ display: "flex", gap: 4, marginBottom: 24 }}>
+                {["Billing", "Account", "API"].map(tab => (
+                  <div key={tab} onClick={() => setSettingsTab(tab)} style={{ padding: "8px 16px", borderRadius: 12, cursor: "pointer", fontSize: 12, fontWeight: 600, background: settingsTab === tab ? "rgba(255,255,255,0.08)" : "transparent", color: settingsTab === tab ? "#fff" : "#6b7280", transition: "all 0.15s" }}>{tab}</div>
+                ))}
+              </div>
+              {settingsTab === "Billing" && (
+                <div>
+                  <div style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 20, marginBottom: 24 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <div><p style={{ fontSize: 13, fontWeight: 600, color: "#fff", margin: 0 }}>Current Plan</p><p style={{ fontSize: 11, color: "#6b7280", margin: "2px 0 0" }}>Free tier</p></div>
+                      <Badge color="gray">Free</Badge>
+                    </div>
+                    {[{ label: "Testimonials", val: "3 / 5", pct: 60 }, { label: "Walls", val: "1 / 1", pct: 100 }].map(bar => (
+                      <div key={bar.label} style={{ marginBottom: 10 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#9ca3af", marginBottom: 4 }}><span>{bar.label}</span><span>{bar.val}</span></div>
+                        <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 999, height: 5 }}>
+                          <div style={{ background: "linear-gradient(90deg, #8b5cf6, #6366f1)", width: `${bar.pct}%`, height: "100%", borderRadius: 999 }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+                    {[
+                      { name: "Free", price: 0, feats: ["1 wall", "5 testimonials", "Basic widgets"], current: true, highlight: false },
+                      { name: "Pro", price: 29, feats: ["10 walls", "200 testimonials", "All layouts", "Remove branding", "Video testimonials"], current: false, highlight: true },
+                      { name: "Agency", price: 99, feats: ["Unlimited walls", "Unlimited testimonials", "White-label", "API access"], current: false, highlight: false },
+                    ].map(tier => (
+                      <div key={tier.name} style={{ background: tier.highlight ? "linear-gradient(160deg, rgba(139,92,246,0.18), rgba(99,102,241,0.08))" : "#10101a", border: `1px solid ${tier.highlight ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)"}`, borderRadius: 18, padding: 20, position: "relative" }}>
+                        {tier.highlight && <div style={{ position: "absolute", top: -9, left: "50%", transform: "translateX(-50%)", background: "linear-gradient(135deg, #8b5cf6, #6366f1)", color: "#fff", fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>POPULAR</div>}
+                        <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#fff", margin: "0 0 6px" }}>{tier.name}</p>
+                        <div style={{ marginBottom: 14 }}>{tier.price === 0 ? <span style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif" }}>Free</span> : <><span style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'Syne', sans-serif" }}>${tier.price}</span><span style={{ fontSize: 11, color: "#6b7280" }}>/mo</span></>}</div>
+                        <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+                          {tier.feats.map(f => <li key={f} style={{ display: "flex", gap: 7, fontSize: 11, color: "#d1d5db" }}><Icon d={icons.check} size={11} style={{ color: "#a78bfa", flexShrink: 0, marginTop: 1 }} />{f}</li>)}
+                        </ul>
+                        {tier.current ? (
+                          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "8px", textAlign: "center", fontSize: 11, color: "#6b7280", border: "1px solid rgba(255,255,255,0.06)" }}>Current plan</div>
+                        ) : (
+                          <Btn variant={tier.highlight ? "primary" : "ghost"} fullWidth size="sm">Upgrade →</Btn>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {settingsTab === "Account" && (
+                <div style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 24, maxWidth: 480 }}>
+                  {[{ l: "Full name", v: "John Doe", t: "text" }, { l: "Email", v: "john@example.com", t: "email" }].map(f => (
+                    <div key={f.l} style={{ marginBottom: 16 }}>
+                      <label style={S.label}>{f.l}</label>
+                      <input type={f.t} defaultValue={f.v} style={S.input} />
+                    </div>
+                  ))}
+                  <Btn variant="primary">Save changes</Btn>
+                </div>
+              )}
+              {settingsTab === "API" && (
+                <div style={{ background: "#10101a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 24, maxWidth: 520 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#fff", margin: "0 0 6px" }}>API Key</p>
+                  <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 14px" }}>Use this key to interact with the TestiFlow API.</p>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <code style={{ flex: 1, background: "#0a0a0e", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 14px", fontSize: 11, color: "#9ca3af", fontFamily: "monospace", overflow: "hidden" }}>tf_live_sk_••••••••••••••••••••••••••••••</code>
+                    <Btn variant="ghost" size="sm" onClick={handleCopy}>{copied ? "✓" : <><Icon d={icons.copy} size={12} /> Copy</>}</Btn>
+                  </div>
+                  <p style={{ fontSize: 11, color: "#6b7280", marginTop: 10 }}>API access requires Pro or Agency plan.</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
